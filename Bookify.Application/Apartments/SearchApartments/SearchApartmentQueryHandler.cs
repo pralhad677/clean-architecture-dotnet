@@ -51,7 +51,7 @@ internal sealed class SearchApartmentQueryHandler:IQueryHandler<SerachApartmentQ
                                      
                                      b.duration_start <= @EndDate AND
                                      b.duration_end >= @StartDate AND
-                                     b.status= Any(@ActiveBookingStatuses)
+                                     b.status= In @ActiveBookingStatuses
                                     )
                            """;
         var apartments = await connection.QueryAsync<ApartmentResponse, AddressResponse, ApartmentResponse>(

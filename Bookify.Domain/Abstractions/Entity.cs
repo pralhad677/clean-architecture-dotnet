@@ -9,5 +9,5 @@ public abstract class Entity(Guid id)
 
     public List<IDomainEvents> GetDomainEvents() => _domainEvents.ToList();
     public void RaiseDomainEvents(IDomainEvents domainEvent) => _domainEvents.Add(domainEvent);
-    public void RemoveDomainEvent(IDomainEvents domainEvent) => _domainEvents.Clear() ;
+    public void ClearDomainEvent( ) => _domainEvents.Clear() ;
 }

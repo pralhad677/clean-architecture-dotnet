@@ -8,5 +8,5 @@ public interface IBookingRepository
  //   bool async IsOverlappingAsync();
  void Add(Booking book );
  Task<Booking> GetByIdAsync(Guid userId,CancellationToken cancellationToken);
- Task<bool>   IsOverlappingAsync(Apartment apartment, int duration, CancellationToken cancellationToken);
+ Task<bool>   IsOverlappingAsync(Apartment apartment, DateRange duration, CancellationToken cancellationToken);
 }
