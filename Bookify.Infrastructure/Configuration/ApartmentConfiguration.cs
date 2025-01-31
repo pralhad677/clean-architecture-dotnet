@@ -1,4 +1,5 @@
 using Bookify.Domain.Apartments;
+using Bookify.Infrastructure.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -25,15 +26,23 @@ namespace Bookify.Infrastructure.Configuration
                 .HasMaxLength(1000)
                 .HasConversion(description=>description.value,value=>new Description(value));  // Adjust the max length as needed
 
-            builder.OwnsOne(a => a.Price, pricebuilder =>
-            {
-                pricebuilder.Property( money => money.Currency).HasConversion(currency=>currency.Code,code=>Currency.FromCode(code));
-            });
-            builder.OwnsOne(a => a.CleaningFee, pricebuilder =>
-            {
-                pricebuilder.Property(money => money.Currency).HasConversion(currency=>currency.Code,code=>Currency.FromCode(code));
-            });
+            // builder.OwnsOne(a => a.Price, pricebuilder =>
+            // {
+            //     pricebuilder.Property( money => money.Currency).HasConversion(currency=>currency.Code,code=>Currency.FromCode(code));
+            // });
+            // builder.OwnsOne(a => a.CleaningFee, pricebuilder =>
+            // {
+            //     pricebuilder.Property(money => money.Currency).HasConversion(currency=>currency.Code,code=>Currency.FromCode(code));
+            // });
 
+            builder.OwnsOne(a => a.Address, addressBuilder =>
+            {
+                addressBuilder.Property(ad => ad.Street).IsRequired();
+                addressBuilder.Property(ad => ad.City).IsRequired();
+                addressBuilder.Property(ad => ad.State).IsRequired();
+                addressBuilder.Property(ad => ad.ZipCode).IsRequired();
+                addressBuilder.Property(ad => ad.Country).IsRequired();
+            });
             builder.Property<uint>("Version").IsRowVersion();
 
 
@@ -44,6 +53,17 @@ namespace Bookify.Infrastructure.Configuration
             // Example:
             // builder.Property(a => a.Price)
             //    .HasConversion(v => v.ToString(), v => new Money(decimal.Parse(v)));
+            var moneyConverter = new MoneyConverter();
+
+            builder.Property(a => a.Price)
+                .IsRequired()
+                .HasConversion(moneyConverter);
+            builder.Property(a => a.CleaningFee)
+                .IsRequired()
+                .HasConversion(moneyConverter);
+
+            builder.Property(a => a.LastBookedOnTuc)
+                .IsRequired(false);
         }
     }
 }

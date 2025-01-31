@@ -4,6 +4,7 @@ namespace Bookify.Domain.Apartments;
 
 public sealed class Apartment :Entity
 {
+    public Apartment(){}
     public Apartment(Guid Id):base(Id)
     {
 

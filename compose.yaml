@@ -1,0 +1,28 @@
+﻿version: '3.8'
+
+services:
+  bookify.api:
+    image: bookify.api
+    build:
+      context: .
+      dockerfile: Bookify.API/Dockerfile
+    depends_on:
+      - sqlserver_db
+    ports:
+      - "8080:8080" # Expose port 5176 for HTTP
+      - "8081:8081" # Expose port 7188 for HTTPS
+
+  sqlserver_db:
+    image: mcr.microsoft.com/mssql/server
+    container_name: sqlserver_db
+    environment:
+      - SA_PASSWORD=Str0ngP@ssw0rd!  # Replace with your strong password
+      - ACCEPT_EULA=Y
+    ports:
+      - "1433:1433"
+    volumes:
+      - ./create-database.sql:/var/lib/sqlserver/data
+
+
+volumes:
+  sqlserver_data:

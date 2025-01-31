@@ -3,84 +3,69 @@ using Bookify.Domain.Users;
 using Bookify.Domain.Apartments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Bookify.Infrastructure.Converters;
 
-namespace Bookify.Infrastructure.Configuration;
-
-public class BookingConfiguration : IEntityTypeConfiguration<Booking>
+namespace Bookify.Infrastructure.Configuration
 {
-    public void Configure(EntityTypeBuilder<Booking> builder)
+    public class BookingConfiguration : IEntityTypeConfiguration<Booking>
     {
-        builder.ToTable("bookings");
-        // Configure the primary key for the Booking entity
-        builder.HasKey(b => b.Id);
-
-        // Configure the relationships (foreign keys)
-        builder.HasOne<User>()  // Booking has one User (Foreign Key)
-            .WithMany()  // Assumes a User can have many Bookings
-            .HasForeignKey(b => b.UserId)
-            .OnDelete(DeleteBehavior.Cascade);  // Defines cascading delete behavior (optional)
-
-        builder.HasOne<Apartment>()  // Booking has one Apartment (Foreign Key)
-            .WithMany()  // Assumes an Apartment can have many Bookings
-            .HasForeignKey(b => b.ApartmentId)
-            .OnDelete(DeleteBehavior.Restrict);  // Defines cascading delete behavior (optional)
-
-        // Configure properties
-        builder.Property(b => b.ApartmentId)
-            .IsRequired()
-            ;
-
-        builder.Property(b => b.UserId)
-            .IsRequired();
-
-        builder.Property(b => b.Duration)
-            .IsRequired();  // Assuming DateRange is a complex type that is correctly mapped
-
-        builder.Property(b => b.PriceForPeriod)
-            .IsRequired();  // Assuming Money is a complex type or value object
-
-        builder.OwnsOne(booking => booking.CleaningFee, pricebuilder =>
+        public void Configure(EntityTypeBuilder<Booking> builder)
         {
-            pricebuilder.Property(money => money.Currency).HasConversion(currency=>currency.Code,code=>Currency.FromCode(code));
-        });
+            builder.ToTable("bookings");
 
-        builder.OwnsOne(booking => booking.AmenitiesUpCharge, pricebuilder =>
-        {
-            pricebuilder.Property(money => money.Currency).HasConversion(currency=>currency.Code,code=>Currency.FromCode(code));
-        });
+            // Configure the primary key for the Booking entity
+            builder.HasKey(b => b.Id);
 
-        builder.OwnsOne(booking => booking.TotalPrice, pricebuilder =>
-        {
-            pricebuilder.Property(money => money.Currency).HasConversion(currency=>currency.Code,code=>Currency.FromCode(code));
-        });
+            // Configure the relationships (foreign keys)
+            builder.HasOne<User>()  // Booking has one User (Foreign Key)
+                .WithMany()  // Assumes a User can have many Bookings
+                .HasForeignKey(b => b.UserId)
+                .OnDelete(DeleteBehavior.Cascade);  // Defines cascading delete behavior (optional)
 
-        // builder.OwnsOne(booking => booking.AmenitiesUpCharge, pricebuilder =>
-        // {
-        //     pricebuilder.Property(money => money.Currency).HasConversion(currency=>currency.Code,code=>Currency.FromCode(code));
-        // });
+            builder.HasOne<Apartment>()  // Booking has one Apartment (Foreign Key)
+                .WithMany()  // Assumes an Apartment can have many Bookings
+                .HasForeignKey(b => b.ApartmentId)
+                .OnDelete(DeleteBehavior.Restrict);  // Defines cascading delete behavior (optional)
 
+            // Configure properties
+            builder.Property(b => b.ApartmentId).IsRequired();
+            builder.Property(b => b.UserId).IsRequired();
 
-        builder.HasOne(booking => booking.Duration);
-        builder.Property(b => b.Status)
-            .IsRequired();  // Assuming BookingStatus is an enum
+            builder.OwnsOne(b => b.Duration, durationBuilder =>
+            {
+                durationBuilder.Property(d => d.Start).IsRequired();
+                durationBuilder.Property(d => d.End).IsRequired();
+            });
 
-        builder.Property(b => b.CreatedOnUtc)
-            .IsRequired();
+            // Apply the MoneyConverter to Money properties
+            var moneyConverter = new MoneyConverter();
 
-        builder.Property(b => b.ConfirmedOnUtc)
-            .IsRequired(false);  // Nullable property
+            builder.Property(b => b.PriceForPeriod)
+                .IsRequired()
+                .HasConversion(moneyConverter);
 
-        builder.Property(b => b.RejectedOnUtc)
-            .IsRequired(false);  // Nullable property
+            builder.Property(b => b.CleaningFee)
+                .IsRequired()
+                .HasConversion(moneyConverter);
 
-        builder.Property(b => b.CompletedOnUtc)
-            .IsRequired(false);  // Nullable property
+            builder.Property(b => b.AmenitiesUpCharge)
+                .IsRequired()
+                .HasConversion(moneyConverter);
 
-        builder.Property(b => b.CanceledOnUtc)
-            .IsRequired(false);  // Nullable property
+            builder.Property(b => b.TotalPrice)
+                .IsRequired()
+                .HasConversion(moneyConverter);
 
-        // Optionally, add indexes on frequently queried fields
-        builder.HasIndex(b => b.UserId);  // Index for UserId
-        builder.HasIndex(b => b.ApartmentId);  // Index for ApartmentId
+            builder.Property(b => b.Status).IsRequired();  // Assuming BookingStatus is an enum
+            builder.Property(b => b.CreatedOnUtc).IsRequired();
+            builder.Property(b => b.ConfirmedOnUtc).IsRequired(false);  // Nullable property
+            builder.Property(b => b.RejectedOnUtc).IsRequired(false);  // Nullable property
+            builder.Property(b => b.CompletedOnUtc).IsRequired(false);  // Nullable property
+            builder.Property(b => b.CanceledOnUtc).IsRequired(false);  // Nullable property
+
+            // Optionally, add indexes on frequently queried fields
+            builder.HasIndex(b => b.UserId);  // Index for UserId
+            builder.HasIndex(b => b.ApartmentId);  // Index for ApartmentId
+        }
     }
 }

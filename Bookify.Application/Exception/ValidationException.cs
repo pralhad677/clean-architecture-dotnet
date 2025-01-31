@@ -9,7 +9,7 @@ public class ValidationException :System.Exception
         Errors = validationErrors;
     }
 
-    public IEnumerable<ValidationError> Errors { get; set; }
+    public static IEnumerable<ValidationError> Errors { get; set; }
 
 
 }

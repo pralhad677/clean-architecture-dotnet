@@ -3,6 +3,7 @@ using Bookify.Application.Abstraction.Data;
 using Bookify.Application.Abstraction.Email;
 using Bookify.Domain.Abstractions;
 using Bookify.Domain.Users;
+using Bookify.Infrastructure.Clock;
 using Bookify.Infrastructure.Data;
 using Bookify.Infrastructure.Email;
 using Bookify.Infrastructure.Repositories;
@@ -28,13 +29,13 @@ public static  class DependencyInjection
      var connectionString = configuration.GetConnectionString("DefaultConnection");
      services.AddSingleton<ISqlConnectionFactory>(_=>new SqlConnectionfactory(connectionString!));
      services.AddDbContext<ApplicationDbContext>(options =>
-         options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString));
 
-                services.AddScoped<IUserRepository, UserRepository>();
-                services.AddScoped<IApartmentsRepository, ApartmentRepository>();
-                services.AddScoped<IBookingRepository, BookingRepository>();
-                services.AddScoped<IUnitOfWork>(sp=>sp.GetRequiredService<ApplicationDbContext>());
-    services.AddSingleton<IDateTimeProvider,IDateTimeProvider>( );
+    services.AddScoped<IUserRepository, UserRepository>();
+    services.AddScoped<IApartmentsRepository, ApartmentRepository>();
+    services.AddScoped<IBookingRepository, BookingRepository>();
+    services.AddScoped<IUnitOfWork>(sp=>sp.GetRequiredService<ApplicationDbContext>());
+    services.AddSingleton<IDateTimeProvider,DateTimeProvider>( );
     services.AddSingleton<IEmailService,EmailService>( );
         return services;
     }
