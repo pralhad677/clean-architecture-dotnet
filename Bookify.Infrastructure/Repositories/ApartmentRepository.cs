@@ -8,4 +8,5 @@ internal sealed class ApartmentRepository: Repository<Apartment>,IApartmentsRepo
     public ApartmentRepository(ApplicationDbContext context) : base(context)
     {
     }
+
 }

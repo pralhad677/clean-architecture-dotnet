@@ -1,3 +1,4 @@
+using Bookify.API.Middleware;
 using Bookify.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,12 @@ public static class ApplicatioBuilderExtensions
 
     public static void UseCustomExceptionHandler(this IApplicationBuilder app)
     {
-        app.UseMiddleware<ExceptionHandlerMiddleware>();
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+    }
+
+    public static IApplicationBuilder UseRequestContextLogging(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<RequestContextLoggingMiddleware>();
+        return app;
     }
 }

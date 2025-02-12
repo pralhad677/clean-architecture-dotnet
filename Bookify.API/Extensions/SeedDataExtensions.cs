@@ -43,11 +43,37 @@ namespace Bookify.API.Extensions
             }
 
             const string sql = """
-                                INSERT INTO [dbo].[Apartments]
-                               (id, name, description, address_country, address_state, address_city, address_zipcode, address_street, price_amount, price_currency, cleaningfee_amount, cleaningfee_currency, lastbookedontuc, amenities)
-                                VALUES (@Id, @Name, @Description, @Address.Country, @Address.State, @Address.City, @Address.ZipCode, @Address.Street, @Price.Amount, @Price.Currency, @CleaningFee.Amount, @CleaningFee.Currency, @LastBookedOnTuc, @Amenities)
+                                  INSERT INTO [dbo].[Apartments]
+                                  (id, name, description, address_country, address_state, address_city, address_zipcode, address_street, price, cleaningfee, lastbookedontuc, amenities, version)
+                                  VALUES (@Id, @Name, @Description, @Country, @State, @City, @ZipCode, @Street, @Price, @CleaningFee, @LastBookedOnTuc, @Amenities, @Version)
                                """;
-            connection.Execute(sql, apartments);
+
+            var flattenedApartments = apartments.Select(apartment => new
+            {
+                Id = apartment.Id,
+                Name = apartment.Name.value,
+                Description = apartment.Description.value,
+                Country = apartment.Address.Country,
+                State = apartment.Address.State,
+                City = apartment.Address.City,
+                ZipCode = apartment.Address.ZipCode,
+                Street = apartment.Address.Street,
+                Price = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    Amount = apartment.Price.Amount,
+                    Currency = apartment.Price.Currency.Code
+                }),
+                CleaningFee = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    Amount = apartment.CleaningFee.Amount,
+                    Currency = apartment.CleaningFee.Currency.Code
+                }),
+                LastBookedOnTuc = apartment.LastBookedOnTuc,
+                Amenities = string.Join(",", apartment.Amenities.Select(a => a.ToString())),
+                Version = 1 // Assuming you have a Version property
+            });
+
+            connection.Execute(sql, flattenedApartments);
         }
     }
 }

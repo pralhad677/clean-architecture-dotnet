@@ -1,17 +1,27 @@
+using Bookify.Application.Abstraction.Clock;
 using Bookify.Application.Exception;
 using Bookify.Domain.Abstractions;
+using Bookify.Infrastructure.OutBox;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace Bookify.Infrastructure;
 
 public sealed  class ApplicationDbContext:DbContext,IUnitOfWork
 {
-    private readonly IPublisher _publisher;
-    public ApplicationDbContext(DbContextOptions options, IPublisher publisher)
+
+
+    private static readonly JsonSerializerSettings JsonSerializerSettings = new()
+    {
+        TypeNameHandling = TypeNameHandling.All,
+    };
+    private readonly IDateTimeProvider _dateTimeProvider;
+    public ApplicationDbContext(DbContextOptions options,   IDateTimeProvider dateTimeProvider)
         : base(options)
     {
-        _publisher = publisher;
+
+        _dateTimeProvider = dateTimeProvider;
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,9 +34,9 @@ public sealed  class ApplicationDbContext:DbContext,IUnitOfWork
         try
         {
 
-
+            AddDomainEventsAsOutBoxMessages();
             var result = await base.SaveChangesAsync(cancellationToken);
-            await PublishDomainEventAsync();
+
             return result;
         }
         catch (DbUpdateConcurrencyException ex)
@@ -35,9 +45,9 @@ public sealed  class ApplicationDbContext:DbContext,IUnitOfWork
         }
     }
 
-    private async Task PublishDomainEventAsync()
+    private void AddDomainEventsAsOutBoxMessages()
     {
-        var domainEvents = this.ChangeTracker
+        var outBoxMessages = this.ChangeTracker
             .Entries<Entity>()
             .Select(e => e.Entity)
             .SelectMany(entity =>
@@ -46,10 +56,17 @@ public sealed  class ApplicationDbContext:DbContext,IUnitOfWork
                 entity.ClearDomainEvent();
                 return domainEvents;
             })
+            .Select(domainEvent=> new OutBoxMessage(
+                Guid.NewGuid(),
+                _dateTimeProvider.UtcNow,
+                domainEvent.GetType().Name,
+                JsonConvert.SerializeObject(domainEvent, JsonSerializerSettings)))
             .ToList();
-        foreach (var domainEvent in domainEvents)
-        {
-                await _publisher.Publish(domainEvent);
-        }
+        // foreach (var domainEvent in domainEvents)
+        // {
+        //         await _publisher.Publish(domainEvent);
+        // }
+
+        AddRange(outBoxMessages); //adding to changetracker
     }
 }

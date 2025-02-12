@@ -1,6 +1,4 @@
-﻿version: '3.8'
-
-services:
+﻿services:
   bookify.api:
     image: bookify.api
     build:
@@ -8,9 +6,10 @@ services:
       dockerfile: Bookify.API/Dockerfile
     depends_on:
       - sqlserver_db
+      - keycloak
     ports:
-      - "8080:8080" # Expose port 5176 for HTTP
-      - "8081:8081" # Expose port 7188 for HTTPS
+      - "8083:8080"  # Host port 8083 maps to container port 8080
+      - "8081:8081"
 
   sqlserver_db:
     image: mcr.microsoft.com/mssql/server
@@ -19,10 +18,40 @@ services:
       - SA_PASSWORD=Str0ngP@ssw0rd!  # Replace with your strong password
       - ACCEPT_EULA=Y
     ports:
-      - "1433:1433"
+      - "1434:1433"
     volumes:
       - ./create-database.sql:/var/lib/sqlserver/data
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+      - KEYCLOAK_IMPORT=/config/realm.json
 
+    ports:
+      - "8082:8080"  # Host port 8082 maps to container port 8080
+    volumes:
+      - ./realm.json:/config/realm.json
+      - keycloak_data:/opt/keycloak/data
+    command: ["start-dev"]
+  seq:
+    image: datalust/seq
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:5341"
+      - "8085:80"
+    volumes:
+      - seq_data:/data
+  bookify-redis:
+    image: redis:latest
+    container_name: Bookify.Redis
+    restart: always
+    ports:
+      - "6379:6379"
 volumes:
   sqlserver_data:
+  keycloak_data:
+  seq_data:

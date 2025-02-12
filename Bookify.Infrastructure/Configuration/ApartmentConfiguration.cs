@@ -46,6 +46,7 @@ namespace Bookify.Infrastructure.Configuration
             builder.Property<uint>("Version").IsRowVersion();
 
 
+
             // Configure any other specific rules based on the domain requirements
             // e.g. value conversions or unique constraints
 
